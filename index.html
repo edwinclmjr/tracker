@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Balance Tracker</title>
+<style>
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f1f3f6;color:#1d2433;font-size:16px}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+.ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+h1,h3{margin:0}
+.btn{border:1px solid #c5ccd8;background:#fff;color:#1d2433;padding:10px 14px;border-radius:8px;min-height:44px}
+.btn.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+.btn.danger{background:#fff;border-color:#dc2626;color:#dc2626}
+.btn.danger.solid{background:#dc2626;color:#fff}
+.btn.block{display:block;width:100%}
+.btn.ibtn{width:36px;min-height:36px;height:36px;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.inp{width:100%;padding:10px;border:1px solid #c5ccd8;border-radius:8px;font:inherit;min-height:44px;background:#fff}
+.lbl{display:block;font-size:.85rem;color:#566074;margin:10px 0 4px}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.muted{color:#6b7385;font-size:.9rem}
+.upper{text-transform:uppercase}
+
+.landing{max-width:420px;margin:0 auto;padding:48px 20px;text-align:center}
+.landing h1{font-size:1.8rem;margin-bottom:8px}
+.landing .btn{margin-top:12px}
+
+.side{position:fixed;left:0;top:0;bottom:0;width:270px;background:#1f2937;color:#e5e7eb;transform:translateX(-100%);transition:transform .2s;z-index:30;display:flex;flex-direction:column;padding:12px;gap:8px;overflow-y:auto}
+.side-open .side{transform:none}
+.side .btn{background:#374151;border-color:#4b5563;color:#fff;text-align:left;display:flex;align-items:center;justify-content:flex-start;gap:10px}
+.side .btn.primary{background:#2563eb;border-color:#2563eb}
+.side .btn.export{background:#059669;border-color:#059669;font-weight:600}
+.side .sep{font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;margin:8px 4px 0}
+.side .tab{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.side .tab.active{background:#fff;color:#111827;border-color:#fff;font-weight:600}
+.badge{background:#f59e0b;color:#111;border-radius:99px;font-size:.75rem;padding:1px 8px;min-width:22px;text-align:center}
+.backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20}
+.main{min-height:100vh;transition:margin-left .2s}
+.top{padding:10px 14px;background:#fff;border-bottom:1px solid #e1e5ec;position:sticky;top:0;z-index:10}
+.toprow{display:flex;align-items:center;gap:10px}
+.top h1{font-size:1.1rem}
+.icon{border:1px solid #c5ccd8;background:#fff;border-radius:8px;width:44px;height:44px;font-size:1.2rem;flex:none}
+.top-del{margin-left:auto}
+.ib-card{text-align:center}
+.ib-card .lbl{margin:0 0 6px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:.75rem}
+.ib{display:flex;align-items:center;justify-content:center;gap:8px;background:#f1f5ff;border:2px solid #c7d6fb;border-radius:12px;padding:6px 14px}
+.ib:focus-within{border-color:#2563eb;background:#fff}
+.ib-peso{font-size:1.6rem;font-weight:700;color:#2563eb}
+.ib input{border:0;background:transparent;outline:0;font:inherit;font-size:2rem;font-weight:800;color:#1d2433;width:9ch;max-width:100%;text-align:center;padding:4px 0;min-height:48px}
+.ib input::placeholder{color:#b6bfd0;font-weight:600}
+.content{padding:14px;max-width:760px;margin:0 auto}
+@media(min-width:800px){.side-open .main{margin-left:270px}}
+@media(max-width:799px){.side-open .backdrop{display:block}}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:#fff;border-radius:12px;padding:10px;box-shadow:0 1px 2px rgba(0,0,0,.06);min-width:0}
+.stat .k{font-size:.72rem;color:#6b7385;white-space:nowrap}
+.stat .v{font-size:.95rem;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
+@media(min-width:600px){.cards{gap:10px}.stat{padding:12px}.stat .k{font-size:.8rem}.stat .v{font-size:1.1rem}}
+.neg{color:#dc2626}.pos{color:#059669}
+.stat .v.none{color:#9aa1b0;font-weight:400}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.actions .btn{font-weight:700;font-size:1.05rem;min-height:52px;border-width:2px}
+.btn.decrease{border-color:#dc2626;color:#dc2626}
+.btn.increase{border-color:#059669;color:#059669}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.tabs .btn{font-weight:600}
+.tabs .btn.active{background:#1f2937;border-color:#1f2937;color:#fff}
+ul.items{list-style:none;margin:0;padding:0}
+.item{display:flex;align-items:center;gap:6px;padding:10px 0;border-top:1px solid #eef0f4}
+.item:first-child{border-top:0}
+.item .chk{display:flex;align-items:center;gap:8px;flex:1 1 0;min-width:0}
+.item input[type=checkbox],.row input[type=checkbox]{width:24px;height:24px;flex:none}
+.item .name{font-weight:600;font-size:.78rem;text-transform:uppercase;overflow-wrap:anywhere;line-height:1.2}
+.item .amt{font-weight:700;font-size:.8rem;margin-left:auto;white-space:nowrap}
+.item.is-approved .name,.item.is-approved .amt{color:#9aa1b0}
+.item.is-approved .amt{font-weight:600}
+.row{display:flex;align-items:center;gap:10px}
+.empty{text-align:center;padding:40px 10px}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:#fff;border-radius:12px;padding:16px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto}
+.modal h3{margin-bottom:8px}
+.mbtns{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.err{color:#dc2626;font-size:.9rem;margin-top:10px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:8px;z-index:60;max-width:90vw;display:none;text-align:center}
+#toast.warn{background:#b45309}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<input type="file" id="file" accept=".txt,text/plain" hidden>
+<script>
+(function(){
+'use strict';
+var KEY='balanceTracker.data';
+var PESO='₱';
+var state={entries:[]};
+var ui={screen:'landing',side:false,view:null,tab:'pending'};
+
+function $(s){return document.querySelector(s);}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function r2(n){return Math.round(n*100)/100;}
+function pad(n){return (n<10?'0':'')+n;}
+function uid(){return Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
+function clean(s){return String(s).replace(/[|\r\n]+/g,' ').replace(/\s+/g,' ').trim();}
+function label(s){return clean(s).toUpperCase();}
+function money(n){
+  var s=Math.abs(n).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  return (n<0?'-':'')+PESO+s;
+}
+
+var ICON={
+  download:'<path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/>',
+  collapse:'<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  home:'<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/>',
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
+};
+function ico(name){return '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">'+ICON[name]+'</svg>';}
+
+function validId(id){
+  var m=/^(\d{2})-(\d{2})-(\d{4})$/.exec(id);
+  if(!m)return false;
+  var mo=+m[1],d=+m[2],y=+m[3];
+  var dt=new Date(y,mo-1,d);
+  return dt.getFullYear()===y&&dt.getMonth()===mo-1&&dt.getDate()===d;
+}
+function idKey(id){return +id.slice(6)*10000+(+id.slice(0,2))*100+(+id.slice(3,5));}
+function isoToId(iso){var p=iso.split('-');return p[1]+'-'+p[2]+'-'+p[0];}
+
+function save(){
+  try{localStorage.setItem(KEY,JSON.stringify(state));}
+  catch(e){toast('Could not save to this browser. Export your data now.',true);}
+}
+function loadSaved(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(!raw)return null;
+    var s=JSON.parse(raw);
+    if(!s||!Array.isArray(s.entries))return null;
+    return s;
+  }catch(e){return null;}
+}
+function hasSaved(){
+  var s=loadSaved();
+  return !!s&&s.entries.length>0;
+}
+
+function serialize(){
+  var L=['BALANCE-TRACKER|v1'];
+  sortedAsc().forEach(function(c){
+    L.push('ENTRY|'+c.id+'|'+c.initialBalance);
+    c.items.forEach(function(i){
+      L.push((i.kind==='increase'?'INCREASE|':'DECREASE|')+i.label+'|'+i.amount+'|'+(i.approved?'approved':'pending'));
+    });
+  });
+  return L.join('\n')+'\n';
+}
+function parseText(text){
+  var out={entries:[]};
+  var cur=null,header=false;
+  function fail(n,m){throw new Error('Line '+n+': '+m);}
+  function num(s,n,what){
+    var v=Number(s);
+    if(s===undefined||String(s).trim()===''||!isFinite(v)||v<0)fail(n,'invalid '+what+' "'+s+'"');
+    return r2(v);
+  }
+  text.replace(/^﻿/,'').split(/\r?\n/).forEach(function(raw,idx){
+    var n=idx+1,line=raw.trim();
+    if(!line||line.charAt(0)==='#')return;
+    var p=line.split('|').map(function(x){return x.trim();});
+    var t=p[0].toUpperCase();
+    if(!header){
+      if(t!=='BALANCE-TRACKER')fail(n,'this is not a Balance Tracker file (missing BALANCE-TRACKER header)');
+      if(p[1]!=='v1')fail(n,'unsupported file version "'+p[1]+'"');
+      header=true;return;
+    }
+    if(t==='ENTRY'){
+      if(p.length!==3)fail(n,'ENTRY needs a date and an initial balance');
+      if(!validId(p[1]))fail(n,'invalid entry date "'+p[1]+'" (use MM-DD-YYYY)');
+      if(out.entries.some(function(c){return c.id===p[1];}))fail(n,'duplicate entry '+p[1]);
+      cur={id:p[1],initialBalance:num(p[2],n,'initial balance'),items:[]};
+      out.entries.push(cur);
+    }else if(t==='DECREASE'||t==='INCREASE'){
+      if(!cur)fail(n,t+' appears before any ENTRY');
+      if(p.length!==4)fail(n,t+' needs a label, an amount and pending/approved');
+      var st=p[3].toLowerCase();
+      if(st!=='pending'&&st!=='approved')fail(n,'status must be pending or approved');
+      var lb=label(p[1]);
+      if(!lb)fail(n,'empty label');
+      cur.items.push({id:uid(),kind:t==='INCREASE'?'increase':'decrease',label:lb,amount:num(p[2],n,'amount'),approved:st==='approved'});
+    }else fail(n,'unknown record "'+p[0]+'"');
+  });
+  if(!header)throw new Error('The file is empty or is not a Balance Tracker file.');
+  return out;
+}
+
+function entryById(id){return state.entries.filter(function(c){return c.id===id;})[0];}
+function sortedAsc(){return state.entries.slice().sort(function(a,b){return idKey(a.id)-idKey(b.id);});}
+function sortedDesc(){return sortedAsc().reverse();}
+function entryStats(c){
+  var inc=0,incApproved=0,dec=0,decApproved=0,cnt=0,pendInc=0,pendDec=0;
+  c.items.forEach(function(i){
+    if(i.kind==='increase'){inc+=i.amount;if(i.approved)incApproved+=i.amount;else pendInc++;}
+    else{dec+=i.amount;if(i.approved)decApproved+=i.amount;else pendDec++;}
+    if(!i.approved)cnt++;
+  });
+  inc=r2(inc);incApproved=r2(incApproved);dec=r2(dec);decApproved=r2(decApproved);
+  var remaining=r2(c.initialBalance+incApproved-decApproved);
+  var pendingIncrease=r2(inc-incApproved),pendingDecrease=r2(dec-decApproved);
+  return {inc:inc,dec:dec,remaining:remaining,
+    ifDecreasesApproved:pendDec?r2(remaining-pendingDecrease):null,
+    ifIncreasesApproved:pendInc?r2(remaining+pendingIncrease):null,
+    ifAllApproved:cnt?r2(remaining+pendingIncrease-pendingDecrease):null,
+    pendingCount:cnt};
+}
+function curEntry(){return ui.view?entryById(ui.view):null;}
+function itemOf(c,id){return c.items.filter(function(i){return i.id===id;})[0];}
+
+var toastTimer=null;
+function toast(msg,warn){
+  var t=$('#toast');
+  t.textContent=msg;t.className=warn?'warn':'';t.style.display='block';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.style.display='none';},warn?5000:2500);
+}
+function modal(o){
+  return new Promise(function(resolve){
+    var wrap=document.createElement('div');
+    wrap.className='modal-bg';
+    var okCls=o.danger?'btn danger solid':'btn primary';
+    wrap.innerHTML='<form class="modal"><h3>'+esc(o.title)+'</h3><div>'+(o.body||'')+'</div><div class="err" hidden></div>'+
+      '<div class="mbtns">'+(o.cancel===null?'':'<button type="button" class="btn" data-cancel>'+esc(o.cancel||'Cancel')+'</button>')+
+      '<button class="'+okCls+'">'+esc(o.ok||'OK')+'</button></div></form>';
+    var form=wrap.firstChild,err=wrap.querySelector('.err');
+    function close(v){wrap.remove();resolve(v);}
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      var v={};
+      new FormData(form).forEach(function(val,k){v[k]=val;});
+      if(o.validate){var m=o.validate(v);if(m){err.textContent=m;err.hidden=false;return;}}
+      close(v);
+    });
+    var c=wrap.querySelector('[data-cancel]');
+    if(c)c.addEventListener('click',function(){close(null);});
+    document.body.appendChild(wrap);
+    var f=wrap.querySelector('input:not([type=checkbox]),select');
+    if(f)f.focus();
+  });
+}
+function confirmBox(title,msg,ok,danger){
+  return modal({title:title,body:'<p>'+msg+'</p>',ok:ok||'OK',danger:danger});
+}
+
+function render(){
+  $('#app').innerHTML=ui.screen==='landing'?landingHtml():appHtml();
+}
+function landingHtml(){
+  return '<div class="landing"><h1>Balance Tracker</h1>'+
+    '<p class="muted">Set an initial balance per entry, then add decreases (money out) and increases (money in).</p>'+
+    '<button class="btn primary block" data-act="import">Import .txt File</button>'+
+    (hasSaved()?'<button class="btn block" data-act="continue">Continue With Saved Data</button>':'')+
+    '<button class="btn block" data-act="fresh">Start Fresh</button>'+
+    '<p class="muted" style="margin-top:24px">Data is stored in this browser only. Use Export in the side panel to keep a .txt backup.</p></div>';
+}
+function appHtml(){
+  var c=curEntry();
+  if(!c)ui.view=null;
+  var tabs=sortedDesc().map(function(x){
+    var n=entryStats(x).pendingCount;
+    return '<button class="btn tab'+(c&&c.id===x.id?' active':'')+'" data-act="viewEntry" data-id="'+esc(x.id)+'"><span>'+esc(x.id)+'</span>'+(n?'<span class="badge" title="Pending">'+n+'</span>':'')+'</button>';
+  }).join('');
+  var body=c?entryHtml(c):'<div class="empty"><p class="muted">No entry selected.</p><button class="btn primary" data-act="newEntry">+ New Entry</button></div>';
+  return '<div class="shell'+(ui.side?' side-open':'')+'">'+
+    '<aside class="side">'+
+      '<button class="btn export" data-act="export">'+ico('download')+'<span>Export All Data (.txt)</span></button>'+
+      '<button class="btn" data-act="toggleSide">'+ico('collapse')+'<span>Collapse Panel</span></button>'+
+      '<button class="btn primary" data-act="newEntry">'+ico('plus')+'<span>New Entry</span></button>'+
+      '<div class="sep">Entries</div>'+(tabs||'<div class="muted" style="padding:4px">No Entries Yet</div>')+
+      '<div style="flex:1"></div>'+
+      '<button class="btn" data-act="home">'+ico('home')+'<span>Back To Start Page</span></button>'+
+    '</aside>'+
+    '<div class="backdrop" data-act="toggleSide"></div>'+
+    '<main class="main"><header class="top"><div class="toprow"><button class="icon" data-act="toggleSide" aria-label="Toggle Panel">&#9776;</button><h1>'+(c?esc(c.id):'Balance Tracker')+'</h1>'+(c?'<button class="btn ibtn danger top-del" data-act="delEntry" aria-label="Delete This Entry" title="Delete This Entry">'+ico('trash')+'</button>':'')+'</div></header>'+
+    '<div class="content">'+body+'</div></main></div>';
+}
+function statBox(k,v,cls){
+  if(v===null)return '<div class="stat"><div class="k">'+k+'</div><div class="v none">&mdash;</div></div>';
+  return '<div class="stat"><div class="k">'+k+'</div><div class="v '+(cls||'')+'">'+money(v)+'</div></div>';
+}
+function itemRow(i){
+  var inc=i.kind==='increase';
+  return '<li class="item'+(i.approved?' is-approved':'')+'">'+
+    '<label class="chk"><input type="checkbox" data-change="approved" data-id="'+i.id+'"'+(i.approved?' checked':'')+' aria-label="Approved"><span class="name">'+esc(i.label)+'</span></label>'+
+    '<span class="amt '+(inc?'pos':'neg')+'">'+(inc?'+':'-')+money(i.amount)+'</span>'+
+    '<button class="btn ibtn" data-act="editItem" data-id="'+i.id+'" aria-label="Edit '+esc(i.label)+'" title="Edit">'+ico('edit')+'</button>'+
+    '<button class="btn ibtn danger" data-act="delItem" data-id="'+i.id+'" aria-label="Delete '+esc(i.label)+'" title="Delete">'+ico('trash')+'</button></li>';
+}
+function entryHtml(c){
+  var s=entryStats(c);
+  var pending=c.items.filter(function(i){return !i.approved;});
+  var approved=c.items.filter(function(i){return i.approved;});
+  var showApproved=ui.tab==='approved';
+  var list=showApproved?approved:pending;
+  return '<section class="card ib-card"><label class="lbl" for="ib">Initial Balance</label>'+
+      '<div class="ib"><span class="ib-peso">'+PESO+'</span><input id="ib" type="text" inputmode="decimal" autocomplete="off" data-money data-maxint="6" maxlength="10" placeholder="0.00" value="'+(c.initialBalance?fmtNum(c.initialBalance):'')+'" data-change="initialBalance"></div></section>'+
+    '<div class="actions"><button class="btn increase" data-act="addIncrease">+ Increase</button>'+
+      '<button class="btn decrease" data-act="addDecrease">&minus; Decrease</button></div>'+
+    '<section class="cards">'+
+      statBox('Remaining',s.remaining,s.remaining<0?'neg':'pos')+
+      statBox('Increase',s.inc,'pos')+
+      statBox('Decrease',s.dec,'neg')+
+      statBox('If All',s.ifAllApproved,s.ifAllApproved<0?'neg':'')+
+      statBox('If Increase',s.ifIncreasesApproved,s.ifIncreasesApproved<0?'neg':'')+
+      statBox('If Decrease',s.ifDecreasesApproved,s.ifDecreasesApproved<0?'neg':'')+
+    '</section>'+
+    '<section class="card"><div class="tabs">'+
+      '<button class="btn'+(showApproved?'':' active')+'" data-act="tab" data-tab="pending">PENDING ('+pending.length+')</button>'+
+      '<button class="btn'+(showApproved?' active':'')+'" data-act="tab" data-tab="approved">APPROVED ('+approved.length+')</button></div>'+
+      (list.length?'<ul class="items">'+list.map(itemRow).join('')+'</ul>':'<p class="muted">'+(showApproved?'Nothing approved yet.':'Nothing pending.')+'</p>')+'</section>';
+}
+
+function enterApp(){
+  ui.screen='app';
+  ui.side=window.innerWidth>=800;
+  var d=sortedDesc();
+  ui.view=d.length?d[0].id:null;
+  render();
+}
+function closeSideIfMobile(){if(window.innerWidth<800)ui.side=false;}
+function doExport(){
+  var blob=new Blob([serialize()],{type:'text/plain'});
+  var a=document.createElement('a');
+  var t=new Date();
+  a.href=URL.createObjectURL(blob);
+  a.download='balance-'+pad(t.getMonth()+1)+'-'+pad(t.getDate())+'-'+t.getFullYear()+'.txt';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1500);
+  toast('Exported '+state.entries.length+' entries.');
+}
+function today(){var t=new Date();return t.getFullYear()+'-'+pad(t.getMonth()+1)+'-'+pad(t.getDate());}
+function fmtNum(n){return n.toLocaleString('en-US',{maximumFractionDigits:2});}
+function amt(s){return Number(String(s).replace(/,/g,''));}
+function numField(name,ph,val,maxint){
+  return '<input class="inp" name="'+name+'" type="text" inputmode="decimal" autocomplete="off" data-money'+(maxint?' data-maxint="'+maxint+'" maxlength="'+(maxint+Math.floor((maxint-1)/3)+3)+'"':'')+' placeholder="'+ph+'"'+(val!==undefined?' value="'+fmtNum(val)+'"':'')+'>';
+}
+function formatMoneyInput(el){
+  var v=el.value,pos=el.selectionStart;
+  var sig=v.slice(0,pos).replace(/[^0-9.]/g,'').length;
+  var raw=v.replace(/[^0-9.]/g,''),dot=raw.indexOf('.');
+  var ip=(dot<0?raw:raw.slice(0,dot)).replace(/^0+(?=\d)/,'');
+  if(el.dataset.maxint)ip=ip.slice(0,+el.dataset.maxint);
+  var out=ip.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(dot<0?'':'.'+raw.slice(dot+1).replace(/\./g,'').slice(0,2));
+  el.value=out;
+  var n=0,i=0;
+  for(;i<out.length&&n<sig;i++)if(/[0-9.]/.test(out.charAt(i)))n++;
+  try{el.setSelectionRange(i,i);}catch(e){}
+}
+
+async function addItem(kind){
+  var c=curEntry();if(!c)return;
+  var dec=kind==='decrease';
+  var v=await modal({title:dec?'Add Decrease':'Add Increase',ok:'Add',
+    body:'<label class="lbl">Label</label><input class="inp upper" name="label" maxlength="60" autocomplete="off">'+
+      '<label class="lbl">Amount ('+PESO+')</label>'+numField('amount','0.00'),
+    validate:function(v){
+      if(!label(v.label||''))return 'Enter a label.';
+      if(!(amt(v.amount)>0))return 'Amount must be greater than zero.';
+    }});
+  if(!v)return;
+  c.items.push({id:uid(),kind:kind,label:label(v.label),amount:r2(amt(v.amount)),approved:false});
+  save();render();
+}
+
+var actions={
+  import:function(){$('#file').value='';$('#file').click();},
+  continue:function(){var s=loadSaved();if(!s){toast('No saved data found.',true);return;}state=s;enterApp();},
+  fresh:async function(){
+    if(hasSaved()){
+      var ok=await confirmBox('Start Fresh?','This erases the data currently saved on this device. Export first if you want to keep it.','Erase And Start',true);
+      if(!ok)return;
+    }
+    state={entries:[]};save();enterApp();
+  },
+  home:function(){ui.screen='landing';render();},
+  toggleSide:function(){ui.side=!ui.side;render();},
+  export:doExport,
+  tab:function(el){ui.tab=el.dataset.tab;render();},
+  viewEntry:function(el){ui.view=el.dataset.id;closeSideIfMobile();render();},
+  addDecrease:function(){addItem('decrease');},
+  addIncrease:function(){addItem('increase');},
+  newEntry:async function(){
+    var v=await modal({title:'New Entry',ok:'Create',
+      body:'<label class="lbl">Date (Entry ID)</label><input class="inp" type="date" name="date" value="'+today()+'" required>'+
+        '<label class="lbl">Initial Balance</label>'+numField('initialBalance','0.00',undefined,6),
+      validate:function(v){
+        if(!v.date)return 'Pick a date.';
+        var id=isoToId(v.date);
+        if(!validId(id))return 'Invalid date.';
+        if(entryById(id))return 'An entry for '+id+' already exists.';
+        if(v.initialBalance.trim()!==''&&!(amt(v.initialBalance)>=0))return 'Initial Balance must be zero or more.';
+      }});
+    if(!v)return;
+    var id=isoToId(v.date);
+    var c={id:id,initialBalance:r2(amt(v.initialBalance||0)),items:[]};
+    state.entries.push(c);save();
+    ui.view=id;ui.tab='pending';closeSideIfMobile();render();
+    toast('Entry '+id+' created.');
+  },
+  delEntry:async function(){
+    var c=curEntry();if(!c)return;
+    var ok=await confirmBox('Delete Entry '+esc(c.id)+'?','This removes the entry and its '+c.items.length+' item(s).','Delete',true);
+    if(!ok)return;
+    state.entries=state.entries.filter(function(x){return x!==c;});save();
+    var d=sortedDesc();
+    ui.view=d.length?d[0].id:null;
+    render();
+  },
+  delItem:async function(el){
+    var c=curEntry();if(!c)return;
+    var it=itemOf(c,el.dataset.id);if(!it)return;
+    var ok=await confirmBox('Delete Item?','Delete "'+esc(it.label)+'" ('+money(it.amount)+')?','Delete',true);
+    if(!ok)return;
+    c.items=c.items.filter(function(i){return i!==it;});save();render();
+  },
+  editItem:async function(el){
+    var c=curEntry();if(!c)return;
+    var it=itemOf(c,el.dataset.id);if(!it)return;
+    var v=await modal({title:'Edit Item',ok:'Save',
+      body:'<label class="lbl">Label</label><input class="inp upper" name="label" maxlength="60" value="'+esc(it.label)+'">'+
+        '<label class="lbl">Amount ('+PESO+')</label>'+numField('amount','0.00',it.amount),
+      validate:function(v){
+        if(!label(v.label||''))return 'Enter a label.';
+        if(!(amt(v.amount)>0))return 'Amount must be greater than zero.';
+      }});
+    if(!v)return;
+    it.label=label(v.label);it.amount=r2(amt(v.amount));
+    save();render();
+  }
+};
+var changes={
+  initialBalance:function(el){
+    var c=curEntry();if(!c)return;
+    var raw=el.value.trim(),v=raw===''?0:amt(raw);
+    if(!isFinite(v)||v<0){toast('Initial Balance must be zero or more.',true);render();return;}
+    c.initialBalance=r2(v);save();render();
+  },
+  approved:function(el){
+    var c=curEntry();if(!c)return;
+    var it=itemOf(c,el.dataset.id);if(!it)return;
+    it.approved=el.checked;save();render();
+  }
+};
+
+document.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');
+  if(el&&actions[el.dataset.act])actions[el.dataset.act](el);
+});
+document.addEventListener('input',function(e){
+  if(e.target.matches&&e.target.matches('[data-money]'))formatMoneyInput(e.target);
+});
+document.addEventListener('change',function(e){
+  var el=e.target.closest('[data-change]');
+  if(el&&changes[el.dataset.change])changes[el.dataset.change](el);
+});
+$('#file').addEventListener('change',function(){
+  var file=this.files[0];
+  if(!file)return;
+  var r=new FileReader();
+  r.onerror=function(){modal({title:'Import Failed',body:'<p>Could not read the file.</p>',cancel:null});};
+  r.onload=async function(){
+    var parsed;
+    try{parsed=parseText(String(r.result));}
+    catch(err){await modal({title:'Import Failed',body:'<p>'+esc(err.message)+'</p>',cancel:null});return;}
+    if(hasSaved()){
+      var ok=await confirmBox('Replace Saved Data?','Importing replaces the data currently saved on this device. Export first if you want to keep it.','Replace',true);
+      if(!ok)return;
+    }
+    state=parsed;save();enterApp();
+    toast('Imported '+state.entries.length+' entry(s).');
+  };
+  r.readAsText(file);
+});
+
+render();
+})();
+</script>
+</body>
+</html>
